@@ -267,7 +267,7 @@
         state = 'gameover';
         highscore = Math.max(highscore, score);
         localStorage.setItem('flippi_highscore', String(highscore));
-        ui.finalScore.textContent = `Score: ${score}  •  Best: ${highscore}`;
+        ui.finalScore.innerHTML = `Score: ${score}<br>Best: ${highscore}`;
         ui.gameover.classList.remove('hidden');
         if (ui.subtitle) ui.subtitle.textContent = '';
         ui.pauseBtn.disabled = true;
