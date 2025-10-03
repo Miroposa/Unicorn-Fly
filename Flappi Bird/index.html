@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="de">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Unicorn Fly</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <canvas id="game" width="400" height="600" aria-label="Flippi Bird Canvas"></canvas>
+        <div id="ui" class="ui">
+            <img id="logo" class="logo" src="assets/unicorn_fly_logo.png" alt="Unicorn Fly">
+            <div id="score" class="score">0</div>
+            <div id="gameover" class="gameover hidden">
+                <div id="finalScore" class="go-score"></div>
+            </div>
+            <div class="controls" aria-label="Spielsteuerung">
+                <button id="pauseBtn" type="button" class="btn" aria-label="Pause umschalten">Pause</button>
+                <button id="restartBtn" type="button" class="btn" aria-label="Spiel neu starten">Retry</button>
+            </div>
+            <div id="startScreen" class="start">
+                <div class="start-inner">
+                    <button id="playBtn" type="button" class="btn btn-primary" aria-label="Spiel starten">Play</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="game.js"></script>
+</body>
+</html>
+
+

@@ -1,0 +1,48 @@
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(180deg, #78d1ff 0%, #b9ecff 100%);
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+    color: #0a2540;
+}
+.container { position: relative; }
+canvas#game {
+    display: block;
+    background: transparent;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+}
+.ui { position: absolute; inset: 0; pointer-events: none; display: grid; place-items: center; }
+.title { display: none; }
+.logo { position: absolute; top: 12px; left: 16px; height: 40px; object-fit: contain; user-select: none; pointer-events: none; }
+.subtitle { position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%); opacity: 0.9; font-size: 14px; }
+.score { position: absolute; top: 16px; right: 16px; font-weight: 700; font-size: 20px; background: rgba(255,255,255,0.6); padding: 6px 10px; border-radius: 8px; }
+.gameover { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; gap: 8px; background: rgba(0,0,0,0.25); backdrop-filter: blur(2px); border-radius: 12px; }
+.gameover.hidden { display: none; }
+.go-title { display: none; }
+.go-score { position: absolute; bottom: 20%; left: 50%; transform: translateX(-50%); font-size: 22px; font-weight: 900; color: #ffffff; text-shadow: 0 3px 10px rgba(0,0,0,0.6); background: rgba(0,0,0,0.25); padding: 6px 12px; border-radius: 10px; }
+.go-sub { font-size: 14px; color: #fff; opacity: 0.9; }
+.go-image { display: none; }
+
+/* Vollbild Game-Over Hintergrund */
+.gameover::before { content: ""; position: absolute; inset: 0; background-image: url('assets/game_over.png'); background-size: cover; background-position: center; filter: none; border-radius: 12px; }
+
+.controls { position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; pointer-events: auto; }
+.btn { appearance: none; border: none; padding: 8px 12px; border-radius: 8px; background: rgba(255,255,255,0.85); color: #0a2540; font-weight: 700; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+.btn:hover { background: #fff; }
+.btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* Startscreen */
+.start { position: absolute; inset: 0; pointer-events: auto; display: grid; place-items: center; background: rgba(0,0,0,0.35); }
+.start-inner { width: 100%; height: 100%; display: grid; place-items: end center; background-image: url('assets/unicorn_fly.png'); background-size: cover; background-position: center; }
+.start .btn { margin-bottom: 8%; }
+.hidden { display: none !important; }
+
+@media (max-width: 480px) {
+    canvas#game { width: 100vw; height: calc(100vw * 1.5); }
+}
+
+
