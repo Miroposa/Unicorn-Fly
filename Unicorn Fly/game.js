@@ -26,6 +26,8 @@
         pipeSpacing: 210,
         pipeWidth: 70
     };
+    // Store defaults to allow resets
+    world.basePipeSpeed = world.pipeSpeed;
 
 	// Player sprite (optional image)
 	const sprite = {
@@ -97,6 +99,10 @@
     let starEmitAcc = 0;
     /** last used gap center to avoid straight rows */
     let lastGapCenter = null;
+    // Difficulty scaling
+    let speedLevel = 0; // increases every 30 points
+    const SPEED_STEP_SCORE = 30;
+    const PIPE_SPEED_INCREMENT = 12; // pixels/sec per level
 
     // UI elements
     const ui = {
@@ -247,6 +253,8 @@
         pipes = [];
         coins = [];
         lastSpawnX = 0;
+        speedLevel = 0;
+        world.pipeSpeed = world.basePipeSpeed;
     }
 
     function startGame() {
@@ -470,6 +478,12 @@
                 score += 1; // Punkte nur über Sterne
                 ui.score.textContent = String(score);
                 sfx.score();
+                // increase difficulty every 30 points
+                const nextLevel = Math.floor(score / SPEED_STEP_SCORE);
+                if (nextLevel > speedLevel) {
+                    speedLevel = nextLevel;
+                    world.pipeSpeed += PIPE_SPEED_INCREMENT;
+                }
             }
         }
 
