@@ -95,6 +95,8 @@
     /** @type {{x:number,y:number,vx:number,vy:number,size:number,life:number,age:number,rot:number,spin:number}[]} */
     let particles = [];
     let starEmitAcc = 0;
+    /** last used gap center to avoid straight rows */
+    let lastGapCenter = null;
 
     // UI elements
     const ui = {
@@ -360,10 +362,34 @@
     function randRange(min, max) { return Math.random() * (max - min) + min; }
 
     function spawnPipePair() {
-        const minGapY = 80;
-        const maxGapY = world.height - world.groundHeight - 80;
-        const gapCenter = randRange(minGapY, maxGapY);
+        // Sichere vertikale Grenzen, damit Wolken nicht abgeschnitten werden
         const gapHalf = world.pipeGap / 2;
+        const baseW = world.pipeWidth * cloudVisual.baseWScale;
+        const baseH = cloudVisual.baseH;
+        const overlap = cloudVisual.overlap;
+        // UI-Sicherheitsabstand: unter dem Logo/Titel (ca. 12px top + 40px Höhe + Puffer)
+        const uiSafeTop = 70;
+        // Obergrenze für Top-Wolke: ihr Unterrand liegt bei p.top, gezeichnet wird sie
+        // bei ty = p.top - (baseH - overlap). Damit sie nicht abgeschnitten wird:
+        // ty >= 0 -> p.top >= (baseH - overlap)
+        const minTop = Math.max(uiSafeTop, (baseH - overlap));
+        // Untere Wolke: beginnt bei (p.bottom - overlap) und hat Höhe baseH.
+        // Damit ihr Unterrand nicht unter den Boden ragt:
+        // (p.bottom - overlap) + baseH <= world.height - world.groundHeight
+        const maxBottom = (world.height - world.groundHeight) - (baseH - overlap);
+        // Daraus erlaubte Lücken-Zentren ableiten
+        const minCenter = minTop + gapHalf;
+        const maxCenter = maxBottom - gapHalf;
+        // Ziehe so lange neu, bis sich die Höhe merklich von der letzten unterscheidet
+        let gapCenter = randRange(minCenter, Math.max(minCenter + 1, maxCenter));
+        if (lastGapCenter !== null) {
+            const minDelta = 70; // Mindestabweichung zwischen aufeinanderfolgenden Lücken
+            let guard = 0;
+            while (Math.abs(gapCenter - lastGapCenter) < minDelta && guard++ < 8) {
+                gapCenter = randRange(minCenter, Math.max(minCenter + 1, maxCenter));
+            }
+        }
+        lastGapCenter = gapCenter;
         const top = gapCenter - gapHalf;
         const bottom = gapCenter + gapHalf;
         const pipeIndex = pipes.push({ x: world.width + world.pipeWidth, top, bottom, passed: false }) - 1;
