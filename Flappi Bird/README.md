@@ -1,4 +1,4 @@
-# Flippi Bird
+# Unicorn Fly
 
 Kleiner Flappy-Bird-Clone in reinem HTML5 Canvas und JavaScript.
 
