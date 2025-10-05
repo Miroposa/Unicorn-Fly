@@ -111,6 +111,7 @@
         finalScore: document.getElementById('finalScore'),
         subtitle: document.getElementById('subtitle'),
         pauseBtn: document.getElementById('pauseBtn'),
+        resumeBtn: document.getElementById('resumeBtn'),
         restartBtn: document.getElementById('restartBtn'),
         startScreen: document.getElementById('startScreen'),
         playBtn: document.getElementById('playBtn')
@@ -244,6 +245,19 @@
         if (base) { try { base.pause(); base.currentTime = 0; } catch {} }
     }
 
+    // Difficulty over time (gentle ramp)
+    let timeSinceStart = 0; // seconds while running
+    const DIFF = {
+        gapStart: 240,          // larger gap at start
+        gapEnd: 150,            // target normal gap
+        spacingStart: 340,      // far fewer obstacles at start
+        spacingEnd: 200,        // normal spacing later
+        rampDuration: 45        // slower ramp to full difficulty
+    };
+    const INITIAL_SPAWN_DELAY = 10.0; // seconds without any clouds
+    const EARLY_COIN_SPACING = 150; // distance between early coins (px)
+    let earlyCoinTravel = 0; // accumulates distance for early coin spawns
+
     function resetGame() {
         score = 0;
         ui.score.textContent = '0';
@@ -255,6 +269,10 @@
         lastSpawnX = 0;
         speedLevel = 0;
         world.pipeSpeed = world.basePipeSpeed;
+        // reset difficulty ramp
+        timeSinceStart = 0;
+        world.pipeGap = DIFF.gapStart;
+        world.pipeSpacing = DIFF.spacingStart;
     }
 
     function startGame() {
@@ -302,9 +320,13 @@
         if (state === 'running') {
             state = 'paused';
             ui.pauseBtn.textContent = 'Weiter';
+            if (ui.resumeBtn) ui.resumeBtn.style.display = '';
+            if (ui.restartBtn) ui.restartBtn.style.display = '';
         } else if (state === 'paused') {
             state = 'running';
             ui.pauseBtn.textContent = 'Pause';
+            if (ui.resumeBtn) ui.resumeBtn.style.display = 'none';
+            if (ui.restartBtn) ui.restartBtn.style.display = 'none';
         }
     }
 
@@ -351,10 +373,15 @@
         if (state === 'paused') {
             ui.pauseBtn.style.display = 'none';
             ui.restartBtn.style.display = '';
+            if (ui.resumeBtn) ui.resumeBtn.style.display = '';
         } else if (state === 'running') {
             ui.pauseBtn.style.display = '';
             ui.restartBtn.style.display = 'none';
+            if (ui.resumeBtn) ui.resumeBtn.style.display = 'none';
         }
+    });
+    if (ui.resumeBtn) ui.resumeBtn.addEventListener('click', () => {
+        if (state === 'paused') togglePause();
     });
     ui.restartBtn.addEventListener('click', async () => {
         await ensureAudio();
@@ -420,6 +447,14 @@
     function update(dt) {
         if (state !== 'running') return;
 
+        // difficulty ramp by time since start
+        timeSinceStart += dt;
+        const t = Math.max(0, Math.min(1, timeSinceStart / DIFF.rampDuration));
+        // ease-out for fair feel
+        const ease = 1 - Math.pow(1 - t, 2);
+        world.pipeGap = Math.round(DIFF.gapStart + (DIFF.gapEnd - DIFF.gapStart) * ease);
+        world.pipeSpacing = Math.round(DIFF.spacingStart + (DIFF.spacingEnd - DIFF.spacingStart) * ease);
+
         // Bird physics
         bird.velocityY += world.gravity * dt;
         bird.y += bird.velocityY * dt;
@@ -427,11 +462,31 @@
         if (bird.velocityY > maxFall) bird.velocityY = maxFall;
         bird.rotation = Math.atan2(bird.velocityY, 400);
 
-        // Spawn pipes based on spacing
-        lastSpawnX += world.pipeSpeed * dt;
-        if (lastSpawnX >= world.pipeSpacing) {
-            spawnPipePair();
-            lastSpawnX = 0;
+        // Spawn pipes based on spacing (delayed at the beginning)
+        if (timeSinceStart >= INITIAL_SPAWN_DELAY) {
+            lastSpawnX += world.pipeSpeed * dt;
+            if (lastSpawnX >= world.pipeSpacing) {
+                spawnPipePair();
+                lastSpawnX = 0;
+            }
+        } else {
+            // During initial phase, spawn standalone coins (no clouds yet)
+            earlyCoinTravel += world.pipeSpeed * dt;
+            if (earlyCoinTravel >= EARLY_COIN_SPACING) {
+                earlyCoinTravel = 0;
+                const safeMargin = 70;
+                const minY = safeMargin;
+                const maxY = world.height - world.groundHeight - safeMargin;
+                const y = randRange(minY, maxY);
+                coins.push({
+                    x: world.width + 40,
+                    y: y,
+                    r: 10,
+                    collected: false,
+                    attachedTo: -1,
+                    offsetX: 0
+                });
+            }
         }
 
         // Move pipes
@@ -462,10 +517,15 @@
         coinSpin += 4 * dt; // spin speed
         for (let i = coins.length - 1; i >= 0; i--) {
             const c = coins[i];
-            // Coin-Position folgt der zugehörigen Pipe (x), y bleibt in Lückenmitte
-            const pipe = pipes[c.attachedTo];
-            if (!pipe) { coins.splice(i, 1); continue; }
-            c.x = pipe.x + c.offsetX;
+            if (c.attachedTo === -1) {
+                // standalone coin (early phase): move left at pipe speed
+                c.x -= world.pipeSpeed * dt;
+            } else {
+                // Coin-Position folgt der zugehörigen Pipe (x), y bleibt in Lückenmitte
+                const pipe = pipes[c.attachedTo];
+                if (!pipe) { coins.splice(i, 1); continue; }
+                c.x = pipe.x + c.offsetX;
+            }
             // Entfernen, wenn weit links raus
             if (c.x < -50) { coins.splice(i, 1); continue; }
 
